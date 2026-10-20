@@ -1,0 +1,312 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Order Form</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.5/build/css/intlTelInput.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #17243a;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 440px;
+      padding: 38px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(42, 15, 38, 0.06);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      margin: 0 0 32px;
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .field {
+      margin-bottom: 22px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #bf47a5;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: #eaace8;
+      box-shadow: 0 0 0 3px rgba(241, 45, 231, 0.1);
+    }
+
+    input::placeholder {
+      color: #94a3b8;
+    }
+
+    .iti {
+      width: 100%;
+    }
+
+    .iti input {
+      width: 100%;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 8px;
+      border: none;
+      border-radius: 7px;
+      background: #e484e7;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #c271b6;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin: 18px 0 0;
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 26px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      .form-container {
+        padding: 26px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="form-container">
+
+    <h1>Submit an Order</h1>
+
+    <p class="subtitle">
+      Enter your order information below.
+    </p>
+
+    <form id="orderForm">
+
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="name@example.com"
+          autocomplete="email"
+          required>
+      </div>
+
+      <div class="field">
+        <label for="phone">Phone Number</label>
+        <input
+          type="tel"
+          id="phone"
+          autocomplete="tel"
+          required>
+      </div>
+
+      <div class="field">
+        <label for="product">Product Name</label>
+        <input
+          type="text"
+          id="product"
+          placeholder="Enter product name"
+          required>
+      </div>
+
+      <div class="field">
+        <label for="quantity">Order Quantity</label>
+        <input
+          type="number"
+          id="quantity"
+          placeholder="Enter quantity"
+          min="1"
+          step="1"
+          required>
+      </div>
+
+      <button type="submit" id="submitButton">
+        Submit Order
+      </button>
+
+      <p
+        id="message"
+        role="status"
+        aria-live="polite"></p>
+    </form>
+
+    <div class="footer">
+      Customer Order Management
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.5/build/js/intlTelInput.min.js"></script>
+
+  <script>
+    const WEBHOOK_URL =
+      "https://hardly-wish-situation.ngrok-free.dev/webhook/customer-order";
+
+    const form = document.getElementById("orderForm");
+    const button = document.getElementById("submitButton");
+    const message = document.getElementById("message");
+    const phoneInput = document.getElementById("phone");
+
+    const iti = window.intlTelInput(phoneInput, {
+      initialCountry: "ua",
+      separateDialCode: true,
+      nationalMode: true,
+      loadUtils: () => import(
+        "https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.5/build/js/utils.js"
+      )
+    });
+
+    function showMessage(text, color) {
+      message.textContent = text;
+      message.style.color = color;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      button.disabled = true;
+
+      try {
+        await iti.promise;
+
+        if (!iti.isValidNumber()) {
+          showMessage(
+            "Please enter a valid phone number.",
+            "#dc2626"
+          );
+          phoneInput.focus();
+          return;
+        }
+
+        const countryData = iti.getSelectedCountryData();
+
+        const order = {
+          email: document
+            .getElementById("email")
+            .value.trim(),
+
+          country: countryData.name,
+
+          country_code: countryData.iso2,
+
+          phone: iti.getNumber(),
+
+          product: document
+            .getElementById("product")
+            .value.trim(),
+
+          quantity: Number(
+            document.getElementById("quantity").value
+          ),
+
+          order_date: new Date().toISOString()
+        };
+
+        showMessage(
+          "Submitting your order...",
+          "#64748b"
+        );
+
+        const response = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(order)
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            "Server returned status " + response.status
+          );
+        }
+
+        showMessage(
+          "Order submitted successfully!",
+          "#15803d"
+        );
+
+        form.reset();
+        iti.setCountry("ua");
+
+      } catch (error) {
+        console.error("Order submission error:", error);
+
+        showMessage(
+          "Unable to submit your order. Please try again.",
+          "#dc2626"
+        );
+
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

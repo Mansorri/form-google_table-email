@@ -1,0 +1,479 @@
+{
+  "name": "form-google_table-email",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "1\\. Create an n8n Workflow — Set up a sequence of automated actions.\n\n2\\. Configure a Webhook — Create a dedicated URL to receive new order data from a form or another service.\n\n3\\. Validate Incoming Data — Check whether the required information, such as the customer's name, phone number, product, and quantity, is provided and valid.\n\n4\\. Save Orders to Google Sheets — Automatically add each new order as a separate row in a spreadsheet.\n\n5\\. Send Email Notifications to the Business Owner — Automatically notify the business owner whenever a new order is received.\n\n6\\. Implement Error Handling — Handle situations where order data is invalid or Google Sheets is unavailable.\n\n7\\. Test the Automation — Submit several test orders and verify that the entire workflow functions correctly.",
+        "height": 592,
+        "width": 416,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -304
+      ],
+      "id": "e85427db-87f7-458a-a057-a662f1a199e6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customer-order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "21bbca2c-5d7c-4cce-9dd7-65e4950d9909",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "13702148-9ef9-4137-845f-ac95266a1896",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "6f853188-62b9-4fb5-aa03-4e8f738ff066",
+              "name": "country",
+              "value": "={{ $json.body.country}}",
+              "type": "string"
+            },
+            {
+              "id": "1bbf4464-5366-4c8f-a76c-6463fd613608",
+              "name": "country_code",
+              "value": "={{ $json.body.country_code }}",
+              "type": "string"
+            },
+            {
+              "id": "bb2d47bc-e24c-46b9-8b81-0d8a6f131367",
+              "name": "phone",
+              "value": "={{ $json.body.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "ed2c97ec-f23a-4aab-be39-5d73a48eeb83",
+              "name": "product",
+              "value": "={{ $json.body.product }}",
+              "type": "string"
+            },
+            {
+              "id": "4f2f8155-6c39-41a9-9d84-a8ba6384fb26",
+              "name": "quantity",
+              "value": "={{ Number($json.body.quantity) }}",
+              "type": "number"
+            },
+            {
+              "id": "8fbefb1e-b8b0-401f-be4e-128362ceed88",
+              "name": "order_date",
+              "value": "={{ $json.body.order_date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d25e452d-826f-4c80-bb86-17cb23c87988",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0a740f38-4997-492f-a343-ac70d2cb2209",
+              "leftValue": "={{ /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test($json.email) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e6b85f3b-d507-4533-a675-aeca6437e5bb",
+              "leftValue": "={{ /^\\+[1-9]\\d{6,14}$/.test($json.phone) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "3a5bcfcc-2492-41d0-b64c-07aff69663f8",
+              "leftValue": "={{ String($json.product ?? '').trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "132866e8-a9bb-4e46-b76f-bcba1db70ed4",
+              "leftValue": "={{ Number.isInteger($json.quantity) && $json.quantity > 0}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "17067179-9c6d-4deb-be70-1a6099743bc5",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Your Spreadsheet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "country_code",
+              "displayName": "country_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product",
+              "displayName": "product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "quantity",
+              "displayName": "quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "order_date",
+              "displayName": "order_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "24014f04-6031-46fe-bd80-792ef1dddf37",
+      "name": "Append row in sheet",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "owner@example.com",
+        "subject": "New Customer Order",
+        "message": "=<h2>New Customer Order</h2>\n\n<p>A new customer order has been received.</p>\n\n<hr>\n\n<p><b>Customer Email:</b> {{ $('Edit Fields').item.json.email }}</p>\n\n<p><b>Country:</b> {{ $('Edit Fields').item.json.country }}</p>\n\n<p><b>Phone:</b> {{ $('Edit Fields').item.json.phone }}</p>\n\n<p><b>Product:</b> {{ $('Edit Fields').item.json.product }}</p>\n\n<p><b>Quantity:</b> {{ $('Edit Fields').item.json.quantity }}</p>\n\n<p><b>Order Date:</b> {{ $('Edit Fields').item.json.order_date }}</p>\n\n<hr>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -208
+      ],
+      "id": "ca569c73-e1fb-465e-a697-09f99a5d71c0",
+      "name": "Send a message",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be35da15-f3c8-4f66-b7a0-bae78cf2a9a2",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "653e6427-72ca-4df3-9cd8-b6f8b330748f",
+              "name": "error",
+              "value": "Invalid order data",
+              "type": "string"
+            },
+            {
+              "id": "4cd43340-188f-4cb7-9184-97fe0eff369a",
+              "name": "message",
+              "value": "Please check your email, phone number, product and quantity.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        128
+      ],
+      "id": "d6ccb847-d7ad-46fc-b44c-315e6919f818",
+      "name": "Invalid Order"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        128
+      ],
+      "id": "182f6fc4-c310-4dc2-ba3b-2f8b2b30ad32",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "\n{\n  \"success\": true,\n  \"message\": \"Order submitted successfully!\"\n}\n",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1008,
+        -304
+      ],
+      "id": "c8fbdba5-e7b9-4e4f-8b6f-f5de52259311",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "\n{\n  \"success\": false,\n  \"error\": \"Order processing failed\",\n  \"message\": \"Unable to save the order. Please try again later.\"\n}\n",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        -32
+      ],
+      "id": "878f1b9b-986b-48e8-9e30-243bc53d0f31",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "\n{\n  \"success\": false,\n  \"error\": \"Email notification failed\",\n  \"message\": \"The order was saved, but the email notification could not be sent.\"\n}\n",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1008,
+        -144
+      ],
+      "id": "23ed6ded-7f1f-47e7-a279-bf42af075b5e",
+      "name": "Respond to Webhook3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invalid Order": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}
